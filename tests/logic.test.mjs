@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DATA} from '../dist/data.js';
+import {resolveParts,torqueRow} from '../dist/logic.js';
+const base={family:'standard',od:200,pn:10,sdr:11,connection:'blind',collar:'long'};
+test('PE200 uses DN200 for standard flange and DN150 for reduced SF',()=>{assert.equal(resolveParts(base).dn,200);assert.equal(resolveParts({...base,family:'ibeco_sf'}).dn,150);});
+test('PN changes hole count and does not invent a PN16 blind article',()=>{const a=resolveParts(base),b=resolveParts({...base,pn:16});assert.equal(a.flange.bolts,8);assert.equal(b.flange.bolts,12);assert.equal(a.blind.article,'BF200-2');assert.equal(b.blind,undefined);});
+test('PN16 is blocked for SDR17 catalog products',()=>assert.equal(resolveParts({...base,pn:16,sdr:17}).blocked,true));
+test('collar thickness and RSK change with SDR',()=>{const a=resolveParts(base).selectedCollar,b=resolveParts({...base,sdr:17}).selectedCollar;assert.equal(a.h,32);assert.equal(b.h,24);assert.equal(a.rsk,'240 99 03');assert.equal(b.rsk,'240 99 22');});
+test('unknown dimensions and anomalous catalog rows never get a guessed result',()=>{assert.equal(resolveParts({...base,od:999}).blocked,true);assert.equal(resolveParts({...base,od:710}).blocked,true);});
+test('HP PN10 PE110 selects exact flange pair',()=>{const r=torqueRow('hp',10,110);assert.equal(r.dn,100);assert.deepEqual(r.a,[11,38,45]);assert.deepEqual(r.b,[12,55,64]);});
+test('SF PN16 PE200 uses the correct reduced DN and gasket columns',()=>{const r=torqueRow('sf',16,200);assert.equal(r.dn,150);assert.deepEqual(r.a,[30,72,84]);assert.deepEqual(r.b,[32,66,78]);});
+test('all imported torque rows have ordered limits and unique source keys',()=>{assert.equal(DATA.torques.length,86);const keys=DATA.torques.map(x=>[x.family,x.pn,x.od].join('/'));assert.equal(new Set(keys).size,keys.length);for(const r of DATA.torques)for(const v of [r.a,r.b])assert.ok(v[0]<=v[1]&&v[1]<=v[2]);});
