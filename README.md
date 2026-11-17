@@ -1,4 +1,4 @@
-# Vabon Flänsguiden
+# Flänsguiden
 
 Svensk mobilanpassad prototyp för flänsval, plocklista och dokumenterade tabellmoment. Statisk webbapp utan konto eller serverdatabas i applikationen.
 
@@ -18,3 +18,11 @@ Svensk mobilanpassad prototyp för flänsval, plocklista och dokumenterade tabel
 Tabellvärdena behöver oberoende verifiering mot ritningar, aktuella datablad och tillverkarvillkor innan skarp fältanvändning. Ej en generell dimensioneringsberäkning. Inga automatiska moment eller bultlängder för IBECO/GF. Ingen automatiskt påstådd kompatibilitet mellan fabrikat. Katalogens DN65-blindfläns är markerad DN60 i originalet och därför spärrad. DN300 PN16-bultsatser skiljer mellan s.232 och s.234 och är inte inlagda som rekommendationer.
 
 Håll produkter och källor åtskilda från beräkningslogiken. Nya dokument ska identifiera exakt produkt, artikel, DN, PN, SDR, packning och monteringsvillkor. Lägg till regressionstest för säkerhetskritiska rättningar.
+
+## Bultlängdsguide 0.2
+
+Genomgående bult med skalle, två brickor och en mutter. Användaren anger verkliga paketmått A/B, monterad packningstjocklek, brickor, mutterhöjd, gängstigning och utstick. Guiden väljer endast från en redigerbar längdlista och inom hela utsticksintervallet. Ingen automatisk avrundning över övre gränsen. Inga dimensioner överförs mellan HP, DUO och blindflänsar.
+
+IBECO H och DUO F kan hämtas i separat måtthjälp; dimensionerna identifierar delarna, inte deras generella kompatibilitet. Överlappning eller försänkning kräver ett mätt paketmått. Räkneexempel är påhittade och märks även i kopierat underlag. Måttändringar återkallar användarens bekräftelse. Ingen hållfasthetsdimensionering, automatisk momentrekommendation, pinnbult, gängat hål eller inspänningsventil.
+
+Bygg den fristående GitHub Pages-filen med `python3 scripts/build.py`. Publicering från main / root.

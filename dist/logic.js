@@ -31,3 +31,32 @@ export function resolveParts(s){
 }
 export function torqueRow(family,pn,od){return DATA.torques.find(x=>x.family===family&&x.pn===pn&&x.od===od);}
 export function torqueValue(row,pair){return row?.[pair]??null;}
+
+// Geometry only: ordinary through bolt, one nut, no threaded holes/studs.
+// A and B exclude the gasket and washers. No catalog dimensions are assumed.
+export function calculateBolt(input){
+ const read=(key,min,inclusive=false)=>{
+  const raw=input[key];
+  if(raw===null||raw===undefined||String(raw).trim()==='')throw new Error('Fyll i alla mått.');
+  const n=Number(String(raw).replace(',','.'));
+  if(!Number.isFinite(n)||(inclusive?n<min:n<=min)||n>10000)throw new Error('Kontrollera måtten: positiva värden i mm krävs. Packning får vara 0.');
+  return n;
+ };
+ const a=read('a',0),b=read('b',0),gasket=read('gasket',0,true),washerA=read('washerA',0,true),washerB=read('washerB',0,true),nut=read('nut',0),pitch=read('pitch',0);
+ const turnsMin=read('turnsMin',0),turnsMax=read('turnsMax',0);
+ if(turnsMax<turnsMin)throw new Error('Största gängutstick måste vara minst lika stort som det minsta.');
+ const body=a+b+gasket+washerA+washerB+nut;
+ const min=body+pitch*turnsMin,max=body+pitch*turnsMax;
+ const stockText=String(input.stock??'').trim();
+ if(!stockText||!/^[\d\s.,;]+$/.test(stockText))throw new Error('Ange tillgängliga bultlängder som heltal, åtskilda med kommatecken.');
+ const stock=[...new Set(stockText.split(/[\s,;]+/).filter(Boolean).map(Number))].sort((x,y)=>x-y);
+ if(!stock.length||stock.some(x=>!Number.isSafeInteger(x)||x<=0||x>10000))throw new Error('Ange positiva hela millimeter för bultlängderna.');
+ const tolerance=1e-8;
+ const matches=stock.filter(x=>x>=min-tolerance&&x<=max+tolerance);
+ const candidate=matches[0]??null;
+ const next=stock.find(x=>x>=min-tolerance)??null;
+ const actualTurns=candidate===null?null:(candidate-body)/pitch;
+ return {a,b,gasket,washerA,washerB,nut,pitch,body,min,max,turnsMin,turnsMax,matches,candidate,next,actualTurns};
+}
+
+export const DUO_THICKNESS={40:21,50:21,60:21,65:21,80:21,100:21,125:21,150:21,200:22,250:26,300:32,350:36,400:38,450:38,500:40,600:46};
