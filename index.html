@@ -173,6 +173,7 @@ function showCatalogDimensions(){
  $('catalog-dims').textContent=c&&f?`H ${c.h} mm + F ${f} mm = ${c.h+f} mm. Bordring RSK ${c.rsk}; DUO DN${dn}. Kontrollera kompatibilitet och anliggning.`:'Välj båda komponenterna.';
 }
 function setCatalogSide(side){
+ if(!$('btype').value.startsWith('pe-')||(side==='b'&&$('btype').value!=='pe-pe'))return;
  const c=DATA.collars[+$('b-collar').value],dn=+$('b-duo').value,f=DUO_THICKNESS[dn];
  if(!c||!f)return;
  const val=resolveParts({family:'standard',od:c.od,pn:10,sdr:c.sdr,collar:c.type,connection:'fixed'});
@@ -222,5 +223,5 @@ $('bexample').addEventListener('click',()=>{
  boltExample=true;boltOrigins.a='Påhittat räkneexempel';boltOrigins.b='Påhittat räkneexempel';$('bolt-context').textContent='Räkneexempel. Måtten avser inga identifierade produkter.';$('bconfirmed').checked=false;renderBolt();
 });
 $('bclear').addEventListener('click',()=>{['ba','bb','bgasket','bwa','bwb','bnut','bpitch'].forEach(id=>$(id).value='');boltExample=false;$('bconfirmed').checked=false;$('bolt-context').textContent='Ingen produktkoppling vald. Ange måtten på dina faktiska delar.';boltOrigins.a='Eget mått';boltOrigins.b='Eget mått';renderBolt();});
-showCatalogDimensions();renderBolt();
+updateBoltType();showCatalogDimensions();renderBolt();
 </script></body></html>
