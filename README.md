@@ -31,4 +31,13 @@ Bygg den fristående GitHub Pages-filen med `python3 scripts/build.py`. Publicer
 
 EPDM med stålinlägg är förvalt. Grafex EX, O-ring och annan packning kan väljas. Valet delas mellan vyerna; Grafex får inga EPDM-moment. Fotots nominella 3 mm för DN200 används inte som monterad tjocklek. O-ring stöds endast av VP/SF-källans särskilda kolumn.
 
-25 rader från IBECO:s aktuella sida för långa syrafasta EPDM-bultsatser visas separat som katalogreferens, med källänk och konfliktmarkering vid avvikande hålbild. Ingen generell kompatibilitet antas. Bultguiden kan föra ett bekräftat, icke-exempelbaserat geometriskt resultat till det förband där beräkningen startades. Ändrat förband, packning eller mått återkallar kopplingen. Ingen lokal beständig lagring av resultat.
+25 rader för långa syrafasta EPDM-bultsatser, återgivna ordagrant från IBECO-katalogen 2023 s. 233, visas separat som katalogreferens, med källänk och konfliktmarkering vid avvikande hålbild. Ingen generell kompatibilitet antas. Bultguiden kan föra ett bekräftat, icke-exempelbaserat geometriskt resultat till det förband där beräkningen startades. Ändrat förband, packning eller mått återkallar kopplingen. Ingen lokal beständig lagring av resultat.
+
+## Granskningsrättningar 0.3.2
+
+- DUO-måttet F förväljs inte längre. Förbanden i Välj förband har PP-stållösfläns, och DUO-mått gäller inte den. Används DUO-hjälpen kopplas resultatet bort från förbandet. SF-flänsar har egna bultförbandstyper utan bordringshjälp.
+- Bultsatsen DN300 PN10 följer katalogen s. 233 (12 × M24) och markeras därför som avvikande mot lösflänsen (12 × M20). Webbsidan är inte avstämd mot katalogen.
+- SF Ø800 / DN700 PN16 spärras: s. 202 anger 20 × M33, s. 397 och s. 233 anger 24 × M33.
+- Flänsborrning (hålbild) är skild från förbandets tryckklass. Tryckklassen tas från svagaste dokumenterade del (PE100-bordring per SDR, lösfläns, blindfläns). PN16-borrning på SDR17 är tillåten men anges som PN10.
+- SF-flänsens katalogbeteckning (s. 202) visas. För PN16 ingår packningen enligt katalogen och plockas inte separat. Beteckningen SFF140-170-10-17 avviker från DN100 och flaggas.
+- Bultvyn visar när kopplingen till förbandet har brutits (ändrat förband, packning, bultdimension eller DUO-mått), och knappen för att koppla längden kontrollerar förbandet igen vid klick.
