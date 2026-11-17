@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DATA} from '../dist/data.js';
-import {resolveParts,torqueRow,calculateBolt,DUO_THICKNESS} from '../dist/logic.js';
+import {resolveParts,torqueRow,calculateBolt,DUO_THICKNESS,catalogKit,selectionKey} from '../dist/logic.js';
 const base={family:'standard',od:200,pn:10,sdr:11,connection:'blind',collar:'long'};
 test('PE200 uses DN200 for standard flange and DN150 for reduced SF',()=>{assert.equal(resolveParts(base).dn,200);assert.equal(resolveParts({...base,family:'ibeco_sf'}).dn,150);});
 test('PN changes hole count and does not invent a PN16 blind article',()=>{const a=resolveParts(base),b=resolveParts({...base,pn:16});assert.equal(a.flange.bolts,8);assert.equal(b.flange.bolts,12);assert.equal(a.blind.article,'BF200-2');assert.equal(b.blind,undefined);});
@@ -20,3 +20,16 @@ test('blank inputs never become zero and negative or invalid hardware is rejecte
 test('explicit zero gasket and comma decimals are accepted',()=>{assert.equal(calculateBolt({...boltBase,gasket:0}).gasket,0);assert.equal(calculateBolt({...boltBase,pitch:'2,5'}).pitch,2.5);});
 test('stock list validation, sorting and inclusive end points',()=>{assert.throws(()=>calculateBolt({...boltBase,stock:'90mm'}));assert.throws(()=>calculateBolt({...boltBase,stock:''}));assert.throws(()=>calculateBolt({...boltBase,stock:'90.5'}));assert.equal(calculateBolt({...boltBase,stock:'100; 90 90,85'}).candidate,90);assert.equal(calculateBolt({...boltBase,turnsMin:4,turnsMax:4,stock:'95'}).candidate,95);});
 test('DUO data is product specific and not a blind flange assumption',()=>{assert.equal(DUO_THICKNESS[200],22);assert.equal(DUO_THICKNESS[600],46);assert.equal(DUO_THICKNESS[700],undefined);});
+
+test('catalog kit is a material-specific reference with separate PN lengths',()=>{
+ const s={...base,gasket:'epdm'};
+ assert.equal(catalogKit(s,resolveParts(s)).length,110);
+ const b={...s,pn:16};assert.equal(catalogKit(b,resolveParts(b)).length,120);
+ for(const gasket of ['grafex','other','oring'])assert.equal(catalogKit({...s,gasket},resolveParts(s)),null);
+ assert.equal(catalogKit({...s,family:'ibeco_sf'},resolveParts({...s,family:'ibeco_sf'})),null);
+ const conflict={...resolveParts(s),flange:{bolts:4,thread:16},dn:200};assert.equal(catalogKit(s,conflict).conflict,true);
+});
+test('assembly identity changes with gasket and every dimension or part choice',()=>{
+ const s={...base,gasket:'epdm'};
+ for(const [key,value] of Object.entries({gasket:'grafex',od:225,pn:16,sdr:17,collar:'short',connection:'pair',family:'ibeco_sf'}))assert.notEqual(selectionKey(s),selectionKey({...s,[key]:value}));
+});

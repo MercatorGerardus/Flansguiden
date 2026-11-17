@@ -60,3 +60,17 @@ export function calculateBolt(input){
 }
 
 export const DUO_THICKNESS={40:21,50:21,60:21,65:21,80:21,100:21,125:21,150:21,200:22,250:26,300:32,350:36,400:38,450:38,500:40,600:46};
+
+export const GASKETS={epdm:'EPDM med stålinlägg',grafex:'Grafex EX',oring:'O-ring',other:'Annan packning'};
+export const KIT_SOURCE='https://ibeco.se/produkter/bultsats-lang-syrafast-epdm';
+// Manufacturer's long A2/A4 EPDM kit, not a universal assembly length.
+export const LONG_KITS=[
+[50,'10/16',80,4,16,'2404544'],[65,'10/16',90,4,16,'2404545'],[80,'10/16',90,4,16,'2404546'],[100,'10/16',90,8,16,'2404547'],[125,'10/16',90,8,16,'2404548'],[150,'10/16',100,8,20,'2404549'],
+[200,'10',110,8,20,'2404550'],[200,'16',120,12,20,'2404551'],[250,'10',110,12,20,'2404552'],[250,'16',140,12,24,'2404553'],[300,'10',130,12,20,'2404554'],[300,'16',140,12,24,'2404555'],[350,'10',140,16,20,'2404556'],[350,'16',150,16,24,'2404557'],[400,'10',140,16,24,'2404558'],[400,'16',160,16,27,'2404559'],[450,'10',150,20,24,'2404560'],[500,'10',180,20,24,'2404562'],[500,'16',190,20,30,'2404563'],[600,'10',190,20,27,'2404564'],[600,'16',200,20,33,'2404565'],[700,'10',190,24,27,'2404566'],[700,'16',200,24,33,'2404567'],[800,'10',200,24,30,'2404568'],[800,'16',210,24,36,'2404569']
+].map(([dn,pn,length,bolts,thread,rsk])=>({dn,pn,length,bolts,thread,rsk}));
+export function catalogKit(s,r){
+ if(r.blocked||s.family!=='standard'||s.gasket!=='epdm')return null;
+ const k=LONG_KITS.find(k=>k.dn===r.dn&&(k.pn==='10/16'||k.pn===String(s.pn)));
+ return k?{...k,conflict:k.bolts!==r.flange.bolts||k.thread!==r.flange.thread}:null;
+}
+export function selectionKey(s){return JSON.stringify([s.family,s.od,s.sdr,s.pn,s.connection,s.collar,s.gasket]);}

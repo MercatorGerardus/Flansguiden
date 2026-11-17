@@ -26,3 +26,9 @@ Genomgående bult med skalle, två brickor och en mutter. Användaren anger verk
 IBECO H och DUO F kan hämtas i separat måtthjälp; dimensionerna identifierar delarna, inte deras generella kompatibilitet. Överlappning eller försänkning kräver ett mätt paketmått. Räkneexempel är påhittade och märks även i kopierat underlag. Måttändringar återkallar användarens bekräftelse. Ingen hållfasthetsdimensionering, automatisk momentrekommendation, pinnbult, gängat hål eller inspänningsventil.
 
 Bygg den fristående GitHub Pages-filen med `python3 scripts/build.py`. Publicering från main / root.
+
+## Packning och bultresultat 0.3
+
+EPDM med stålinlägg är förvalt. Grafex EX, O-ring och annan packning kan väljas. Valet delas mellan vyerna; Grafex får inga EPDM-moment. Fotots nominella 3 mm för DN200 används inte som monterad tjocklek. O-ring stöds endast av VP/SF-källans särskilda kolumn.
+
+25 rader från IBECO:s aktuella sida för långa syrafasta EPDM-bultsatser visas separat som katalogreferens, med källänk och konfliktmarkering vid avvikande hålbild. Ingen generell kompatibilitet antas. Bultguiden kan föra ett bekräftat, icke-exempelbaserat geometriskt resultat till det förband där beräkningen startades. Ändrat förband, packning eller mått återkallar kopplingen. Ingen lokal beständig lagring av resultat.
