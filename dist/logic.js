@@ -38,19 +38,30 @@ export function resolveParts(s){
  const blind=DATA.blind.find(x=>x.dn===flange.dn&&(x.pn==='10/16'||x.pn===String(pn))&&!x.review);
  const issues=[];
  // Borrningen (pn) styr hålbilden. Förbandets tryckklass begränsas av svagaste dokumenterade del.
- const limits=[];
- if(SDR_PN[sdr])limits.push({part:family==='ibeco_sf'?`SF-fläns SDR${sdr}`:`PE100-bordring SDR${sdr}`,pn:family==='ibeco_sf'?Math.min(SDR_PN[sdr],pn):SDR_PN[sdr]});
- if(family==='standard'&&flange.rating)limits.push({part:`PP-stållösfläns ${flange.article}`,pn:flange.rating});
- if(connection==='blind'&&blind)limits.push({part:`blindfläns ${blind.article}`,pn:blind.pn==='10/16'?16:Number(blind.pn)});
- const ratedPn=limits.length?Math.min(...limits.map(x=>x.pn)):null;
- const limitedBy=limits.filter(x=>x.pn===ratedPn).map(x=>x.part);
- if(ratedPn!==null&&ratedPn<pn)issues.push(`Borrning PN${pn} ger hålbild mot PN${pn}-armatur, men förbandets dokumenterade tryckklass är PN${ratedPn} (${limitedBy.join(', ')}).`);
+ // identifiedPn gäller endast identifierade delar. ratedPn anges bara när varje del i förbandet är identifierad.
+ const limits=[],missingParts=[];
+ if(s.material!=='pe100')missingParts.push(s.material?'rörmaterial (endast PE100 omfattas av underlaget)':'rörmaterial (ej angivet)');
+ if(family==='ibeco_sf')limits.push({part:`SF-fläns ${flange.sfArticle??'SDR'+sdr}`,pn:pn});
+ else{
+  if(selectedCollar&&s.material==='pe100'&&SDR_PN[sdr])limits.push({part:`PE100-bordring SDR${sdr}`,pn:SDR_PN[sdr]});
+  else if(!selectedCollar)missingParts.push('bordring');
+  if(flange.rating)limits.push({part:`PP-stållösfläns ${flange.article}`,pn:flange.rating});
+ }
+ if(connection==='blind'){if(blind)limits.push({part:`blindfläns ${blind.article}`,pn:blind.pn==='10/16'?16:Number(blind.pn)});else missingParts.push('blindfläns');}
+ if(connection==='fixed')missingParts.push('motfläns / ventil (ej identifierad)');
+ if(connection==='pair'&&family==='ibeco_sf')missingParts.push('andra SF-änden (kontrolleras separat)');
+ if(family==='ibeco_sf'&&flange.sfArticleReview)missingParts.push(`SF-artikel ${flange.sfArticle}`);
+ const identifiedPn=limits.length?Math.min(...limits.map(x=>x.pn)):null;
+ const limitedBy=limits.filter(x=>x.pn===identifiedPn).map(x=>x.part);
+ const ratedPn=missingParts.length?null:identifiedPn;
+ if(identifiedPn!==null&&identifiedPn<pn)issues.push(`Borrning PN${pn} ger hålbild mot PN${pn}-armatur, men identifierade delar är dokumenterade för högst PN${identifiedPn} (${limitedBy.join(', ')}).`);
+ if(missingParts.length)issues.push(`Förbandets tryckklass är inte fastställd. Underlag saknas för: ${missingParts.join(', ')}.`);
  if(family==='standard'&&!selectedCollar)issues.push('Bordring saknas för vald längd och SDR i det inlästa underlaget.');
  if(connection==='blind'&&!blind)issues.push(pn===16&&flange.dn>=200?'IBECO:s blindflänsar DN200 och större är katalogförda endast i PN10 (katalog 2023 s. 222 och datablad). PN16 ska beställas som specialutförande och verifieras hos IBECO.':'Blindflänsens exakta artikel behöver verifieras för detta val.');
  if(family==='ibeco_sf')issues.push('SF är en reducerad anslutning. Momentdata från Reinert-Ritz överförs inte automatiskt till IBECO:s SF-produkt.');
  if(connection==='pair'&&family==='ibeco_sf')issues.push('Underlaget här identifierar en SF-ände. Två SF-ändar som komplett förband behöver separat kontroll.');
  if(family==='ibeco_sf'&&flange.sfArticleReview)issues.push(`Katalogens beteckning ${flange.sfArticle} stämmer inte med DN${flange.dn}. Kontrollera artikeln hos IBECO.`);
- return {blocked:false,flange,selectedCollar,blind,issues,dn:flange.dn,ratedPn,limitedBy};
+ return {blocked:false,flange,selectedCollar,blind,issues,dn:flange.dn,ratedPn,identifiedPn,limitedBy,missingParts};
 }
 export function torqueRow(family,pn,od){return DATA.torques.find(x=>x.family===family&&x.pn===pn&&x.od===od);}
 export function torqueValue(row,pair){return row?.[pair]??null;}
@@ -98,4 +109,13 @@ export function catalogKit(s,r){
  const k=LONG_KITS.find(k=>k.dn===r.dn&&(k.pn==='10/16'||k.pn===String(s.pn)));
  return k?{...k,conflict:k.bolts!==r.flange.bolts||k.thread!==r.flange.thread}:null;
 }
-export function selectionKey(s){return JSON.stringify([s.family,s.od,s.sdr,s.pn,s.connection,s.collar,s.gasket]);}
+export function selectionKey(s){return JSON.stringify([s.family,s.od,s.sdr,s.material??'',s.pn,s.connection,s.collar,s.gasket]);}
+// Packningsrader för plocklistan. En medföljande packning får aldrig namnet på användarens val:
+// katalogen anger bara att packning ingår, inte vilken typ.
+export function gasketLines(s,r){
+ const chosen=GASKETS[s.gasket];
+ if(r.flange?.gasketIncluded)return [
+  {name:'Medföljande packning · typ ej angiven i katalogen',detail:`Ingår i IBECO SF-fläns PN16 enligt katalog s. 202. Typ, material och tjocklek är inte dokumenterade i underlaget.`,qty:'Ingår · typ okänd',wait:true,included:true},
+  {name:`Vald packning: ${chosen}`,detail:'Ersätter den medföljande packningen endast efter kontroll av typ, tjocklek och tillverkarens godkännande.',qty:'Kontroll krävs',wait:true,included:false}];
+ return [{name:chosen,detail:`DN${r.dn} · PN${s.pn} · exakt produkt och profil kontrolleras`,qty:'1 st',wait:false,included:false}];
+}
