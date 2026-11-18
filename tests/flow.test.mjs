@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {selectedTorque,resolveParts,calculateBolt,sizes,COARSE_PITCH} from '../dist/logic.js';
-const joint={family:'rr_hp',od:200,pn:10,sdr:11,connection:'fixed',gasket:'epdm'};
+const joint={family:'rr_hp',od:200,pn:10,sdr:11,connection:'fixed',gasket:'epdm_profile'};
 test('one selection chooses the correct HP torque column for metal and plastic',()=>{assert.deepEqual(selectedTorque(joint).value,[39,95,111]);assert.deepEqual(selectedTorque({...joint,connection:'pair'}).value,[42,178,210]);assert.equal(resolveParts(joint).dn,200);});
 test('unknown catalogue SF must not inherit a similarly named RR SF moment',()=>{assert.equal(selectedTorque({...joint,family:'ibeco_sf'}).value,null);assert.ok(selectedTorque({...joint,family:'rr_sf'}).value);});
 test('unsupported manufacturers and gaskets never inherit RR torques',()=>{for(const family of ['standard','ibeco_sf','ulefos','gf','agru','plasson','extena','pipelife'])assert.equal(selectedTorque({...joint,family}).value,null,family);for(const gasket of ['grafex','other','oring'])assert.equal(selectedTorque({...joint,gasket}).value,null,gasket);});
