@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {selectedTorque,resolveParts,calculateBolt,sizes,COARSE_PITCH} from '../dist/logic.js';
+const joint={family:'rr_hp',od:200,pn:10,sdr:11,connection:'fixed',gasket:'epdm_profile'};
+test('one selection chooses the correct HP torque column for metal and plastic',()=>{assert.deepEqual(selectedTorque(joint).value,[39,95,111]);assert.deepEqual(selectedTorque({...joint,connection:'pair'}).value,[42,178,210]);assert.equal(resolveParts(joint).dn,200);});
+test('unknown catalogue SF must not inherit a similarly named RR SF moment',()=>{assert.equal(selectedTorque({...joint,family:'ibeco_sf'}).value,null);assert.ok(selectedTorque({...joint,family:'rr_sf'}).value);});
+test('unsupported manufacturers and gaskets never inherit RR torques',()=>{for(const family of ['standard','ibeco_sf','ulefos','gf','agru','plasson','extena','pipelife'])assert.equal(selectedTorque({...joint,family}).value,null,family);for(const gasket of ['grafex','other','oring'])assert.equal(selectedTorque({...joint,gasket}).value,null,gasket);});
+test('blind flange and two reduced ends do not borrow a steel connection moment',()=>{assert.equal(selectedTorque({...joint,connection:'blind'}).value,null);assert.equal(selectedTorque({...joint,family:'rr_sf',connection:'pair'}).value,null);});
+test('SF switches between O-ring and profile columns using the same gasket choice',()=>{const p={...joint,family:'rr_sf'};assert.deepEqual(selectedTorque({...p,gasket:'oring'}).value,[22,72,84]);assert.deepEqual(selectedTorque(p).value,[25,66,78]);});
+test('Ulefos uses its own source and dimensions, not catalogue articles or collars',()=>{const r=resolveParts({...joint,family:'ulefos',od:160});assert.equal(r.flange.rsk,'2818353');assert.equal(r.dn,150);assert.equal(r.flange.thickness,24);assert.equal(r.flange.bolts,8);assert.equal(r.selectedCollar,undefined);assert.match(r.source,/ulefos.se/);assert.equal(r.jointPn,null);assert.equal(resolveParts({...joint,family:'ulefos',od:560,pn:16}).blocked,true);assert.deepEqual(sizes('ulefos'),[160,560]);});
+const measurements={a:30,b:28,gasket:3,washerA:3,washerB:3,nut:18,pitch:2.5,turnsMin:2,turnsMax:3,stock:'80; 90; 100'};
+test('measured combined hardware gives identical bolt lengths without inventing individual dimensions',()=>{const full=calculateBolt(measurements),compact=calculateBolt({...measurements,washerA:'',washerB:'',nut:'',hardwareStack:24});assert.equal(compact.body,full.body);assert.equal(compact.candidate,full.candidate);assert.equal(compact.nut,null);assert.equal(compact.washerA,null);});
+test('incomplete hardware is not silently zero in either input mode',()=>{assert.throws(()=>calculateBolt({...measurements,hardwareStack:'',nut:''}));assert.throws(()=>calculateBolt({...measurements,hardwareStack:'0'}));});
+test('decimal input rejects alternate numeric formats',()=>{for(const pitch of ['0x2','1e1','Infinity','2foo'])assert.throws(()=>calculateBolt({...measurements,pitch}),pitch);assert.equal(COARSE_PITCH[20],2.5);assert.equal(COARSE_PITCH[16],2);});
+
+test('large RR flanges require current delivery-specific torque rather than an older table',()=>{assert.equal(selectedTorque({...joint,od:315}).value,null);assert.match(selectedTorque({...joint,od:315}).reason,/leveransdokumenten/);});
+
+test('reported 160 mm SDR11 metal flange EPDM case shows HP 66 and VP/SF 50 Nm for both drillings',()=>{for(const pn of [10,16]){const s={...joint,od:160,sdr:11,pn};assert.equal(selectedTorque(s).value[1],66);assert.equal(selectedTorque({...s,family:'rr_sf'}).value[1],50);assert.equal(selectedTorque({...s,family:'standard'}).value,null);}});
