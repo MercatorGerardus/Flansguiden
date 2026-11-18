@@ -38,7 +38,8 @@ export function resolveParts(s){
  const blind=DATA.blind.find(x=>x.dn===flange.dn&&(x.pn==='10/16'||x.pn===String(pn))&&!x.review);
  const issues=[];
  // Borrningen (pn) styr hålbilden. Förbandets tryckklass begränsas av svagaste dokumenterade del.
- // identifiedPn gäller endast identifierade delar. ratedPn anges bara när varje del i förbandet är identifierad.
+ // identifiedPn gäller endast identifierade katalogdelar. componentPn anges när alla katalogdelar är identifierade.
+ // Hela förbandets tryckklass anges aldrig: packningens lämplighet och delarnas kompatibilitet verifieras inte här.
  const limits=[],missingParts=[];
  if(s.material!=='pe100')missingParts.push(s.material?'rörmaterial (endast PE100 omfattas av underlaget)':'rörmaterial (ej angivet)');
  if(family==='ibeco_sf')limits.push({part:`SF-fläns ${flange.sfArticle??'SDR'+sdr}`,pn:pn});
@@ -53,15 +54,17 @@ export function resolveParts(s){
  if(family==='ibeco_sf'&&flange.sfArticleReview)missingParts.push(`SF-artikel ${flange.sfArticle}`);
  const identifiedPn=limits.length?Math.min(...limits.map(x=>x.pn)):null;
  const limitedBy=limits.filter(x=>x.pn===identifiedPn).map(x=>x.part);
- const ratedPn=missingParts.length?null:identifiedPn;
+ const componentPn=missingParts.length?null:identifiedPn;
+ const identifiedParts=limits.map(x=>x.part);
+ const jointUnverified=['packning (typ, tryckklass och lämplighet är inte verifierade)','kompatibilitet mellan delarna'];
  if(identifiedPn!==null&&identifiedPn<pn)issues.push(`Borrning PN${pn} ger hålbild mot PN${pn}-armatur, men identifierade delar är dokumenterade för högst PN${identifiedPn} (${limitedBy.join(', ')}).`);
- if(missingParts.length)issues.push(`Förbandets tryckklass är inte fastställd. Underlag saknas för: ${missingParts.join(', ')}.`);
+ if(missingParts.length)issues.push(`Katalogdelarnas tryckklass är inte fastställd. Underlag saknas för: ${missingParts.join(', ')}.`);
  if(family==='standard'&&!selectedCollar)issues.push('Bordring saknas för vald längd och SDR i det inlästa underlaget.');
  if(connection==='blind'&&!blind)issues.push(pn===16&&flange.dn>=200?'IBECO:s blindflänsar DN200 och större är katalogförda endast i PN10 (katalog 2023 s. 222 och datablad). PN16 ska beställas som specialutförande och verifieras hos IBECO.':'Blindflänsens exakta artikel behöver verifieras för detta val.');
  if(family==='ibeco_sf')issues.push('SF är en reducerad anslutning. Momentdata från Reinert-Ritz överförs inte automatiskt till IBECO:s SF-produkt.');
  if(connection==='pair'&&family==='ibeco_sf')issues.push('Underlaget här identifierar en SF-ände. Två SF-ändar som komplett förband behöver separat kontroll.');
  if(family==='ibeco_sf'&&flange.sfArticleReview)issues.push(`Katalogens beteckning ${flange.sfArticle} stämmer inte med DN${flange.dn}. Kontrollera artikeln hos IBECO.`);
- return {blocked:false,flange,selectedCollar,blind,issues,dn:flange.dn,ratedPn,identifiedPn,limitedBy,missingParts};
+ return {blocked:false,flange,selectedCollar,blind,issues,dn:flange.dn,componentPn,identifiedPn,identifiedParts,limitedBy,missingParts,jointPn:null,jointUnverified};
 }
 export function torqueRow(family,pn,od){return DATA.torques.find(x=>x.family===family&&x.pn===pn&&x.od===od);}
 export function torqueValue(row,pair){return row?.[pair]??null;}
@@ -110,6 +113,14 @@ export function catalogKit(s,r){
  return k?{...k,conflict:k.bolts!==r.flange.bolts||k.thread!==r.flange.thread}:null;
 }
 export function selectionKey(s){return JSON.stringify([s.family,s.od,s.sdr,s.material??'',s.pn,s.connection,s.collar,s.gasket]);}
+// Tryckklassbesked för gränssnitt och kopierad lista. Säger aldrig att hela förbandet har en PN.
+export function pressureSummary(r){
+ const parts=r.identifiedParts?.join(', ')||'inga';
+ const value=r.componentPn?`PN ${r.componentPn}`:'Ej fastställd';
+ const scope=r.componentPn?`Gäller endast katalogdelarna: ${parts}. Lägst: ${r.limitedBy.join(', ')}.`:`Underlag saknas för: ${r.missingParts.join(', ')}.${r.identifiedPn?` Identifierade delar högst PN ${r.identifiedPn} (${r.limitedBy.join(', ')}).`:''}`;
+ const joint=`Hela förbandet: ej fastställd. Ej verifierat: ${r.jointUnverified.join(', ')}.`;
+ return {caption:'Tryckklass · katalogdelar',value,scope,joint,copy:`Tryckklass katalogdelar: ${value}. ${scope}\n${joint}`};
+}
 // Packningsrader för plocklistan. En medföljande packning får aldrig namnet på användarens val:
 // katalogen anger bara att packning ingår, inte vilken typ.
 export function gasketLines(s,r){
