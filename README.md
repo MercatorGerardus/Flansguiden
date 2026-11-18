@@ -58,3 +58,9 @@ https://www.reinert-ritz.de/products/assembly-instructions-flanges/?lang=en
 Bultguidens enkla läge använder fyra uppmätta mått: A, B, monterad packning P och C (mutter + två brickor staplade). Inga enskilda mutter-/brickmått härleds ur C. Detaljerat läge finns kvar. Metrisk grovgänga förifylls; avvikande stigning varnas. Formel: A+B+P+C+n×p. C ersätter endast summan av de två brickorna och muttern.
 
 Skisserna är illustrativa längdsnitt, inte produktmåttritningar. Alla måttsymboler återkommer i bildens måttnyckel. Blindfläns ritas utan rörlopp, lösfläns bakom bordringskragen och bult utanför kragens ytterdiameter.
+
+
+### 0.4.1 – synligt momentbesked
+Momentbeskedet visas före skiss, DN och tryckklass. Saknat momentunderlag benämns separat från ej fastställd tryckklass. Neutrala katalogval och Ulefos är märkta med att moment saknas. Inga nya momentvärden eller tillverkarantaganden har lagts till.
+
+Reproducerbart kontrollfall: `?family=rr_hp&od=160&sdr=11&pn=10&connection=fixed&gasket=epdm` visar HP-tabellens 66 Nm; `family=rr_sf` ger VP/SF-tabellens 50 Nm. Queryparametrar återställer bara val som finns i respektive synligt fält; rörmaterial lämnas tomt.

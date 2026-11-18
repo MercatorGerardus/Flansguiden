@@ -14,3 +14,5 @@ test('incomplete hardware is not silently zero in either input mode',()=>{assert
 test('decimal input rejects alternate numeric formats',()=>{for(const pitch of ['0x2','1e1','Infinity','2foo'])assert.throws(()=>calculateBolt({...measurements,pitch}),pitch);assert.equal(COARSE_PITCH[20],2.5);assert.equal(COARSE_PITCH[16],2);});
 
 test('large RR flanges require current delivery-specific torque rather than an older table',()=>{assert.equal(selectedTorque({...joint,od:315}).value,null);assert.match(selectedTorque({...joint,od:315}).reason,/leveransdokumenten/);});
+
+test('reported 160 mm SDR11 metal flange EPDM case shows HP 66 and VP/SF 50 Nm for both drillings',()=>{for(const pn of [10,16]){const s={...joint,od:160,sdr:11,pn};assert.equal(selectedTorque(s).value[1],66);assert.equal(selectedTorque({...s,family:'rr_sf'}).value[1],50);assert.equal(selectedTorque({...s,family:'standard'}).value,null);}});
