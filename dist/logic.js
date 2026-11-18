@@ -18,9 +18,11 @@ export const SF_ARTICLE_REVIEW=new Set(['SFF140-170-10-17']);
 export const SF_CONFLICTS={'800/16':'S. 202 anger 20 × M33 för SF Ø800 / DN700 PN16, men flänstabellen s. 397 och bultsatsen s. 233 anger 24 × M33. Hålbilden måste bekräftas av IBECO.'};
 // Tryckklass för PE100-bordringar enligt katalog s. 200–201. Andra PE-material omfattas inte.
 export const SDR_PN={11:16,17:10};
-export function sizes(family){if(family==='gf')return [200];if(family==='ibeco_sf')return sfSizes.map(x=>x[0]);return [...new Set(DATA.flanges.map(x=>x.od))].sort((a,b)=>a-b);}
+export function sizes(family){if(family.startsWith('rr_'))return [...new Set(DATA.torques.filter(x=>x.family===family.slice(3)).map(x=>x.od))];if(family==='ulefos')return ULEFOS.map(x=>x.od);if(['agru','plasson','extena','pipelife'].includes(family))return [50,63,75,90,110,125,140,160,180,200,225,250,280,315,355,400,450,500,560,630,710,800];if(family==='gf')return [200];if(family==='ibeco_sf')return sfSizes.map(x=>x[0]);return [...new Set(DATA.flanges.map(x=>x.od))].sort((a,b)=>a-b);}
 export function resolveParts(s){
  const {family,od,pn,sdr,connection,collar}=s;
+ if(family.startsWith('rr_')||family==='ulefos')return resolveNamedParts(s);
+ if(['agru','plasson','extena','pipelife'].includes(family))return {blocked:true,message:'Produktunderlag återstår för '+family,detail:'Fabrikatet är valt, men exakt flänsserie, DN, hålbild och moment är ännu inte inlästa. Använd bultguiden med egna mått. Inga uppgifter från andra fabrikat överförs.'};
  if(family==='gf')return {blocked:true,message:'GF är ännu ett referensexempel',detail:'ELGEF Plus Ø200 / DN200 finns kontrollerat i GF:s verktyg. Fullständig koppling till PN, blindfläns och aktuella datablad återstår. Öppna GF:s verktyg för produktval.',dn:200,gf:true};
  if(family==='ibeco_sf'&&pn===16&&sdr!==11)return {blocked:true,message:'Ingen SF-fläns PN16 i SDR'+sdr+' i underlaget',detail:'IBECO:s långa SF-fläns PN16 är katalogförd endast för SDR11 (katalog 2023 s. 202). Välj PN10-borrning eller SDR11.'};
  if(family==='ibeco_sf'&&SF_CONFLICTS[od+'/'+pn])return {blocked:true,message:'Katalogkonflikt i hålbilden',detail:SF_CONFLICTS[od+'/'+pn],dn:sfSizes.find(x=>x[0]===od)?.[1]};
@@ -75,14 +77,17 @@ export function calculateBolt(input){
  const read=(key,min,inclusive=false)=>{
   const raw=input[key];
   if(raw===null||raw===undefined||String(raw).trim()==='')throw new Error('Fyll i alla mått.');
+  if(!/^\d+(?:[.,]\d+)?$/.test(String(raw).trim()))throw new Error('Ange ett decimaltal i mm, till exempel 25,5.');
   const n=Number(String(raw).replace(',','.'));
   if(!Number.isFinite(n)||(inclusive?n<min:n<=min)||n>10000)throw new Error('Kontrollera måtten: positiva värden i mm krävs. Packning får vara 0.');
   return n;
  };
- const a=read('a',0),b=read('b',0),gasket=read('gasket',0,true),washerA=read('washerA',0,true),washerB=read('washerB',0,true),nut=read('nut',0),pitch=read('pitch',0);
+ const compact=String(input.hardwareStack??'').trim()!=='';
+ const a=read('a',0),b=read('b',0),gasket=read('gasket',0,true),washerA=compact?null:read('washerA',0,true),washerB=compact?null:read('washerB',0,true),nut=compact?null:read('nut',0),pitch=read('pitch',0);
+ const hardwareStack=compact?read('hardwareStack',0):washerA+washerB+nut;
  const turnsMin=read('turnsMin',0),turnsMax=read('turnsMax',0);
  if(turnsMax<turnsMin)throw new Error('Största gängutstick måste vara minst lika stort som det minsta.');
- const body=a+b+gasket+washerA+washerB+nut;
+ const body=a+b+gasket+hardwareStack;
  const min=body+pitch*turnsMin,max=body+pitch*turnsMax;
  const stockText=String(input.stock??'').trim();
  if(!stockText||!/^[\d\s.,;]+$/.test(stockText))throw new Error('Ange tillgängliga bultlängder som heltal, åtskilda med kommatecken.');
@@ -93,7 +98,7 @@ export function calculateBolt(input){
  const candidate=matches[0]??null;
  const next=stock.find(x=>x>=min-tolerance)??null;
  const actualTurns=candidate===null?null:(candidate-body)/pitch;
- return {a,b,gasket,washerA,washerB,nut,pitch,body,min,max,turnsMin,turnsMax,matches,candidate,next,actualTurns};
+ return {a,b,gasket,washerA,washerB,nut,hardwareStack,compact,pitch,body,min,max,turnsMin,turnsMax,matches,candidate,next,actualTurns};
 }
 
 export const DUO_THICKNESS={40:21,50:21,60:21,65:21,80:21,100:21,125:21,150:21,200:22,250:26,300:32,350:36,400:38,450:38,500:40,600:46};
@@ -126,7 +131,33 @@ export function pressureSummary(r){
 export function gasketLines(s,r){
  const chosen=GASKETS[s.gasket];
  if(r.flange?.gasketIncluded)return [
-  {name:'Medföljande packning · typ ej angiven i katalogen',detail:`Ingår i IBECO SF-fläns PN16 enligt katalog s. 202. Typ, material och tjocklek är inte dokumenterade i underlaget.`,qty:'Ingår · typ okänd',wait:true,included:true},
+  {name:'Medföljande packning · typ ej angiven i katalogen',detail:`Ingår i reducerad SF-fläns PN16 enligt IBECO-katalogen s. 202. Typ, material och tjocklek är inte dokumenterade i underlaget.`,qty:'Ingår · typ okänd',wait:true,included:true},
   {name:`Vald packning: ${chosen}`,detail:'Ersätter den medföljande packningen endast efter kontroll av typ, tjocklek och tillverkarens godkännande.',qty:'Kontroll krävs',wait:true,included:false}];
  return [{name:chosen,detail:`DN${r.dn} · PN${s.pn} · exakt produkt och profil kontrolleras`,qty:'1 st',wait:false,included:false}];
+}
+
+// Primary product pages, kept separate from distributor catalogue data. b is the flange thickness.
+export const ULEFOS=[
+ {od:160,dn:150,pn:'10/16',bolts:8,thread:20,thickness:24,diameter:285,circle:240,rsk:'2818353',source:'https://ulefos.se/produkt/160xdn150/'},
+ {od:560,dn:600,pn:'10',bolts:20,thread:27,thickness:64,diameter:796,circle:725,rsk:'2818364',source:'https://ulefos.se/produkt/560xdn600/'}
+];
+export const COARSE_PITCH={12:1.75,16:2,20:2.5,24:3,27:3,30:3.5,33:3.5,36:4,39:4,45:4.5,52:5};
+export function selectedTorque(s){
+ if(!s.family.startsWith('rr_'))return {value:null,reason:'Moment kräver underlag för det valda fabrikatet och flänssystemet. Inga Reinert-Ritz-värden överförs till andra produkter.'};
+ const family=s.family.slice(3),row=torqueRow(family,s.pn,s.od);
+ if(s.connection==='blind')return {value:null,reason:'Momenttabellen identifierar inte den valda blindflänsen. Underlag för det exakta flänsparet krävs.'};
+ if(s.gasket==='grafex'||s.gasket==='other'||family==='hp'&&s.gasket==='oring')return {value:null,reason:'Momentunderlag saknas för den här packningen i det valda systemet.'};
+ if(family==='sf'&&s.connection==='pair')return {value:null,reason:'Tabellen gäller stål mot VP/SF, inte två VP/SF-ändar.'};
+ if(!row)return {value:null,reason:'Dimensionen saknas i den inlästa momenttabellen.'};
+ if(row.dn>200)return {value:null,reason:'För DN över 200 hänvisar Reinert-Ritz aktuella monteringsunderlag till leveransdokumenten. Begär moment för exakt produkt; den äldre tabellen används inte automatiskt.'};
+ const column=family==='hp'?(s.connection==='pair'?'b':'a'):(s.gasket==='oring'?'a':'b');
+ return {value:row[column],row,column,reason:'Tabellvärde för angivet Reinert-Ritz-flänspar. Kontrollera profilpackning och samtliga monteringsvillkor.'};
+}
+function resolveNamedParts(s){
+ const isRR=s.family.startsWith('rr_');
+ const t=isRR?torqueRow(s.family.slice(3),s.pn,s.od):null;
+ const f=isRR?(t?{dn:t.dn,od:s.od,pn:String(s.pn),bolts:null,thread:null}:null):ULEFOS.find(x=>x.od===s.od&&(x.pn==='10/16'||x.pn===String(s.pn)));
+ if(!f)return {blocked:true,message:'Valet saknas i det inlästa produktunderlaget',detail:'Välj en dokumenterad dimension och borrning. Ulefos-serien omfattar för närvarande Ø160 PN10/16 och Ø560 PN10.'};
+ const name=isRR?'Reinert-Ritz '+(s.family==='rr_hp'?'HP-fläns':'VP/SF-fläns'):'Ulefos PP-stållösfläns';
+ return {blocked:false,named:true,name,dn:f.dn,flange:f,source:isRR?'https://www.reinert-ritz.de/products/assembly-instructions-flanges/?lang=en':f.source,issues:['Artikel, motfläns och komplett förband måste identifieras separat.'],componentPn:null,identifiedPn:null,identifiedParts:[name],limitedBy:[],missingParts:['komplett produkt- och materialunderlag'],jointPn:null,jointUnverified:['packningens lämplighet','kompatibilitet mellan delarna']};
 }

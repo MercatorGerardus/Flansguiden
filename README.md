@@ -41,3 +41,20 @@ EPDM med stålinlägg är förvalt. Grafex EX, O-ring och annan packning kan vä
 - Flänsborrning (hålbild) är skild från tryckklassen. Appen anger bara tryckklass för identifierade katalogdelar (bordring, lösfläns, blindfläns eller SF-fläns), och bara när alla katalogdelar är identifierade och rörmaterialet aktivt är valt som PE100. Materialfältet är tomt från start. Hela förbandets tryckklass anges aldrig: packningens typ, tryckklass och lämplighet samt delarnas kompatibilitet verifieras inte i underlaget. PN16-borrning på SDR17 PE100 är tillåten men katalogdelarna begränsas till PN10.
 - SF-flänsens katalogbeteckning (s. 202) visas. För PN16 anger katalogen att packning ingår men inte vilken typ: plocklistan visar en medföljande packning av okänd typ och användarens valda packning som en separat rad som kräver kontroll. Beteckningen SFF140-170-10-17 avviker från DN100 och flaggas.
 - Bultvyn visar när kopplingen till förbandet har brutits (ändrat förband, packning, bultdimension eller DUO-mått), och knappen för att koppla längden kontrollerar förbandet igen vid klick.
+
+
+## Förbandsflöde 0.4.0
+
+Förband och moment delar samma produkt-, dimensions-, flänspar- och packningsval. Inga moment överförs mellan fabrikat. Neutrala produktnamn används för katalogdelar där tillverkaren inte är identifierad; IBECO behålls som distributör/katalogkälla. Reinert-Ritz HP och VP/SF är separata serier. GF, Agru, Plasson, Extena och Pipelife visas med tydlig avgränsning när exakt produktunderlag saknas.
+
+Ulefos PP-stållösfläns har två separat verifierade rader, utan att ärva bordringar, blindflänsar eller moment ur någon annan katalog:
+- Ø160/DN150 PN10/16: RSK 2818353, 8×M20, b=24 mm, D=285 mm, k=240 mm. Källa: https://ulefos.se/produkt/160xdn150/
+- Ø560/DN600 PN10: RSK 2818364, 20×M27, b=64 mm, D=796 mm, k=725 mm. Källa: https://ulefos.se/produkt/560xdn600/
+
+Reinert-Ritz aktuella anvisning ska kontrolleras mot levererad produkt. För DN över 200 används inte äldre momentrader automatiskt i det gemensamma flödet, eftersom det aktuella underlaget hänvisar till leveransdokumenten:
+https://www.reinert-ritz.de/wp-content/uploads/2025/03/Flange-installation_EN.pdf
+https://www.reinert-ritz.de/products/assembly-instructions-flanges/?lang=en
+
+Bultguidens enkla läge använder fyra uppmätta mått: A, B, monterad packning P och C (mutter + två brickor staplade). Inga enskilda mutter-/brickmått härleds ur C. Detaljerat läge finns kvar. Metrisk grovgänga förifylls; avvikande stigning varnas. Formel: A+B+P+C+n×p. C ersätter endast summan av de två brickorna och muttern.
+
+Skisserna är illustrativa längdsnitt, inte produktmåttritningar. Alla måttsymboler återkommer i bildens måttnyckel. Blindfläns ritas utan rörlopp, lösfläns bakom bordringskragen och bult utanför kragens ytterdiameter.
