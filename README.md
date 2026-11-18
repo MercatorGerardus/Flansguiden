@@ -10,12 +10,13 @@ Svensk mobilanpassad prototyp för flänsval, plocklista och dokumenterade tabel
 
 - IBECO produktkatalog 2023: s. 200–202, 222 och 225. Inlästa 35 lösflänsrader och 91 bordringsrader. Anomalier på stora dimensioner spärras. Bultlängder från satstabellerna används inte generellt.
 - Reinert-Ritz HP PN10/PN16: 48 rader; reducerad VP/SF PN10/PN16: 38 rader. Båda kolumnerna bevaras per rad med min/rekommenderat/max samt källsida.
-- GF-verktyget: en referenskontroll i källvyn, inga generella GF-rekommendationer.
+- GF ecoFIT PE: villkorsstyrda tabellreferenser ur Planning Fundamentals Industry, 09/2026, IV · 311. ELGEF Plus är separat och har ingen automatisk momentkoppling.
+- AGRU Ø160 DIN-lösfläns 14.014.0160.11: tabell C.9 s. 60 samt separat verifierat produktmaxvärde. Se docs/torque-review.md.
 - Blindfläns med gängat uttag prioriteras enligt användaren. PN16 för DN200 och uppåt återstår att dokumentera; ingen PN10-artikel återanvänds som PN16.
 
 ## Begränsningar och nästa steg
 
-Tabellvärdena behöver oberoende verifiering mot ritningar, aktuella datablad och tillverkarvillkor innan skarp fältanvändning. Ej en generell dimensioneringsberäkning. Inga automatiska moment eller bultlängder för IBECO/GF. Ingen automatiskt påstådd kompatibilitet mellan fabrikat. Katalogens DN65-blindfläns är markerad DN60 i originalet och därför spärrad. DN300 PN16-bultsatser skiljer mellan s.232 och s.234 och är inte inlagda som rekommendationer.
+Tabellvärdena behöver oberoende verifiering mot ritningar, aktuella datablad och tillverkarvillkor innan skarp fältanvändning. Ej en generell dimensioneringsberäkning. Inga generella moment för oidentifierade katalogdelar och inga automatiska produktbaserade bultlängder. Ingen automatiskt påstådd kompatibilitet mellan fabrikat. Katalogens DN65-blindfläns är markerad DN60 i originalet och därför spärrad. DN300 PN16-bultsatser skiljer mellan s.232 och s.234 och är inte inlagda som rekommendationer.
 
 Håll produkter och källor åtskilda från beräkningslogiken. Nya dokument ska identifiera exakt produkt, artikel, DN, PN, SDR, packning och monteringsvillkor. Lägg till regressionstest för säkerhetskritiska rättningar.
 
@@ -41,3 +42,37 @@ EPDM med stålinlägg är förvalt. Grafex EX, O-ring och annan packning kan vä
 - Flänsborrning (hålbild) är skild från tryckklassen. Appen anger bara tryckklass för identifierade katalogdelar (bordring, lösfläns, blindfläns eller SF-fläns), och bara när alla katalogdelar är identifierade och rörmaterialet aktivt är valt som PE100. Materialfältet är tomt från start. Hela förbandets tryckklass anges aldrig: packningens typ, tryckklass och lämplighet samt delarnas kompatibilitet verifieras inte i underlaget. PN16-borrning på SDR17 PE100 är tillåten men katalogdelarna begränsas till PN10.
 - SF-flänsens katalogbeteckning (s. 202) visas. För PN16 anger katalogen att packning ingår men inte vilken typ: plocklistan visar en medföljande packning av okänd typ och användarens valda packning som en separat rad som kräver kontroll. Beteckningen SFF140-170-10-17 avviker från DN100 och flaggas.
 - Bultvyn visar när kopplingen till förbandet har brutits (ändrat förband, packning, bultdimension eller DUO-mått), och knappen för att koppla längden kontrollerar förbandet igen vid klick.
+
+
+## Förbandsflöde 0.4.0
+
+Förband och moment delar samma produkt-, dimensions-, flänspar- och packningsval. Inga moment överförs mellan fabrikat. Neutrala produktnamn används för katalogdelar där tillverkaren inte är identifierad; IBECO behålls som distributör/katalogkälla. Reinert-Ritz HP och VP/SF är separata serier. GF, Agru, Plasson, Extena och Pipelife visas med tydlig avgränsning när exakt produktunderlag saknas.
+
+Ulefos PP-stållösfläns har två separat verifierade rader, utan att ärva bordringar, blindflänsar eller moment ur någon annan katalog:
+- Ø160/DN150 PN10/16: RSK 2818353, 8×M20, b=24 mm, D=285 mm, k=240 mm. Källa: https://ulefos.se/produkt/160xdn150/
+- Ø560/DN600 PN10: RSK 2818364, 20×M27, b=64 mm, D=796 mm, k=725 mm. Källa: https://ulefos.se/produkt/560xdn600/
+
+Reinert-Ritz aktuella anvisning ska kontrolleras mot levererad produkt. För DN över 200 används inte äldre momentrader automatiskt i det gemensamma flödet, eftersom det aktuella underlaget hänvisar till leveransdokumenten:
+https://www.reinert-ritz.de/wp-content/uploads/2025/03/Flange-installation_EN.pdf
+https://www.reinert-ritz.de/products/assembly-instructions-flanges/?lang=en
+
+Bultguidens enkla läge använder fyra uppmätta mått: A, B, monterad packning P och C (mutter + två brickor staplade). Inga enskilda mutter-/brickmått härleds ur C. Detaljerat läge finns kvar. Metrisk grovgänga förifylls; avvikande stigning varnas. Formel: A+B+P+C+n×p. C ersätter endast summan av de två brickorna och muttern.
+
+Skisserna är illustrativa längdsnitt, inte produktmåttritningar. Alla måttsymboler återkommer i bildens måttnyckel. Blindfläns ritas utan rörlopp, lösfläns bakom bordringskragen och bult utanför kragens ytterdiameter.
+
+
+### 0.4.1 – synligt momentbesked
+Momentbeskedet visas före skiss, DN och tryckklass. Saknat momentunderlag benämns separat från ej fastställd tryckklass. Neutrala katalogval och Ulefos är märkta med att moment saknas. Inga nya momentvärden eller tillverkarantaganden har lagts till.
+
+Reproducerbart kontrollfall: `?family=rr_hp&od=160&sdr=11&pn=10&connection=fixed&gasket=epdm_profile` visar HP-tabellens 66 Nm; `family=rr_sf` ger VP/SF-tabellens 50 Nm. Queryparametrar återställer bara val som finns i respektive synligt fält; rörmaterial lämnas tomt.
+
+
+## 0.5.0 – avgränsad momenttäckning
+
+Produktvalen skiljer mellan momentunderlag inom angivna villkor, enbart produktmått och återstående produkt-/verktygskontroll. EPDM med okänd profil ger inte längre ett Nm. Profilpackning och planpackning måste väljas uttryckligen. Grafex EX får fortfarande inga Nm.
+
+GF ecoFIT PE med PP-stållösfläns har 25 inlästa ytterdiametrar från tabell IV · 311. Användaren måste välja tabellens smorta eller osmorta utförande. Detta är inte en instruktion att smörja packningen. Inga hålbilder eller arbetstryck härleds ur momenttabellen och inget överförs till ELGEF Plus.
+
+AGRU är avgränsat till Ø160/DN150 och artikel 14.014.0160.11. C.9-tabellens riktvärde (80 Shore A, friktion cirka 0,15) och produktens maxvärde visas separat. Blindflänsar och två plaständar får ingen automatisk GF-/AGRU-koppling. Värdena är villkorsstyrda referenser, inte godkännande av ett komplett förband.
+
+54 logiktester passerar. GF:s samtliga fyra momentkolumner jämförs med en separat PDF-extraherad CSV-fixtur. Källomfattning och kvarvarande luckor dokumenteras i [docs/torque-review.md](docs/torque-review.md).
